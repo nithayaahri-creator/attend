@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Attendance Face Registration</title>
+
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial,sans-serif}
+body{min-height:100vh;background:radial-gradient(circle at top,#1e3a8a,#020617 60%);color:white}
+header{padding:20px 8%;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.08);backdrop-filter:blur(15px);position:sticky;top:0;z-index:10}
+.logo{font-size:23px;font-weight:800}
+nav a{color:#cbd5e1;text-decoration:none;margin-left:18px;font-weight:600}
+section{padding:55px 8%}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;min-height:85vh}
+h1{font-size:48px;line-height:1.05;margin-bottom:18px}
+span{color:#38bdf8}
+p{color:#cbd5e1;line-height:1.7;margin-bottom:16px}
+button{padding:12px 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#8b5cf6);color:white;font-weight:800;cursor:pointer;margin:5px}
+button:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(56,189,248,.3)}
+.card,.box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:24px;box-shadow:0 25px 70px rgba(0,0,0,.3);backdrop-filter:blur(18px)}
+.scene{perspective:1000px}
+.id-card{width:320px;height:420px;margin:auto;border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.2);transform-style:preserve-3d;animation:float 4s ease-in-out infinite;text-align:center;padding:28px;position:relative;overflow:hidden}
+.id-card:before{content:"";position:absolute;width:180px;height:180px;background:#38bdf8;filter:blur(70px);top:-40px;right:-40px}
+.id-card:after{content:"";position:absolute;width:150px;height:150px;background:#8b5cf6;filter:blur(70px);bottom:-40px;left:-40px}
+.avatar{width:110px;height:110px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#8b5cf6);display:grid;place-items:center;margin:35px auto 20px;font-size:50px;position:relative;z-index:1}
+.id-card h2,.id-card p,.id-card h3{position:relative;z-index:1}
+.scan{position:absolute;left:0;top:0;width:100%;height:4px;background:#22c55e;box-shadow:0 0 25px #22c55e;animation:scan 2.5s linear infinite;z-index:2}
+@keyframes float{0%,100%{transform:rotateY(-8deg) rotateX(5deg)}50%{transform:rotateY(8deg) rotateX(-5deg) translateY(-18px)}}
+@keyframes scan{0%{top:25px}50%{top:375px}100%{top:25px}}
+.title{font-size:38px;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.form-area{display:grid;grid-template-columns:.9fr 1.1fr;gap:24px}
+input,select{width:100%;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:white;margin-bottom:14px;outline:none}
+select option{color:black}
+.camera{position:relative;border-radius:20px;overflow:hidden;background:#020617;border:1px solid rgba(255,255,255,.15);margin-top:16px}
+video,canvas{width:100%;display:block}
+canvas{position:absolute;top:0;left:0}
+.status{padding:12px;border-radius:14px;background:rgba(255,255,255,.08);margin-top:12px;color:#cbd5e1;font-weight:700}
+.good{color:#86efac!important}.warn{color:#fde68a!important}.bad{color:#fecaca!important}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{padding:13px;text-align:left;border-bottom:1px solid rgba(255,255,255,.12)}
+th{color:#e2e8f0}td{color:#cbd5e1}
+.present{color:#86efac;font-weight:800}.late{color:#fde68a;font-weight:800}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+footer{text-align:center;padding:28px;color:#94a3b8;background:rgba(255,255,255,.05)}
+@media(max-width:900px){header{flex-direction:column;gap:15px}.hero,.form-area{grid-template-columns:1fr}.grid,.features{grid-template-columns:1fr}h1{font-size:36px}.id-card{width:100%;max-width:320px}nav a{margin:6px}}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">🎓 Smart Attendance</div>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#register">Register</a>
+    <a href="#attendance">Attendance</a>
+  </nav>
+</header>
+
+<section id="home" class="hero">
+  <div>
+    <h1>Smart Attendance <span>Face Registration System</span></h1>
+    <p>
+      Register student faces first, then recognize the student using webcam and mark attendance.
+      This is a supervised face registration demo for your engineering project.
+    </p>
+    <button onclick="startCamera()">Start Camera</button>
+    <button onclick="scrollToRegister()">Register Face</button>
+    <button onclick="recognizeFace()">Recognize Face</button>
+  </div>
+
+  <div class="scene">
+    <div class="id-card">
+      <div class="scan"></div>
+      <div class="avatar">👤</div>
+      <h2 id="cardName">Student ID</h2>
+      <p id="cardReg">Register No: --</p>
+      <p id="cardDept">Department: EIE</p>
+      <h3 id="cardStatus" class="good">Ready</h3>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1 class="title">Dashboard</h1>
+  <div class="grid">
+    <div class="box"><p>Registered Faces</p><h2 id="registeredCount">0</h2></div>
+    <div class="box"><p>Total Attendance</p><h2 id="total">0</h2></div>
+    <div class="box"><p>Present</p><h2 id="present">0</h2></div>
+    <div class="box"><p>Late Entry</p><h2 id="late">0</h2></div>
+  </div>
+</section>
+
+<section id="register">
+  <h1 class="title">Face Registration & Attendance Panel</h1>
+
+  <div class="form-area">
+    <div class="card">
+      <h2>Student Details</h2>
+      <br>
+
+      <input type="text" id="name" placeholder="Student Name">
+      <input type="text" id="regno" placeholder="Register Number">
+
+      <select id="department">
+        <option value="EIE">Electronics and Instrumentation</option>
+        <option value="ECE">Electronics and Communication</option>
+        <option value="CSE">Computer Science</option>
+        <option value="EEE">Electrical and Electronics</option>
+        <option value="MECH">Mechanical</option>
+      </select>
+
+      <select id="entryType">
+        <option value="Present">Present</option>
+        <option value="Late Entry">Late Entry</option>
+      </select>
+
+      <button onclick="startCamera()">Start Camera</button>
+      <button onclick="registerFace()">Register Face</button>
+      <button onclick="recognizeFace()">Recognize Face</button>
+      <button onclick="markAttendance()">Mark Attendance</button>
+      <button onclick="clearAll()">Clear All</button>
+
+      <div class="camera">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <div class="status" id="statusBox">Loading AI face models...</div>
+    </div>
+
+    <div class="card" id="attendance">
+      <h2>Attendance Records</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Reg No</th>
+            <th>Dept</th>
+            <th>Status</th>
+            <th>Face</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody id="recordTable">
+          <tr><td colspan="6">No attendance marked yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h1 class="title">Features</h1>
+  <div class="features">
+    <div class="box"><h2>📷 Supervised Registration</h2><p>Student face is registered with name and register number.</p></div>
+    <div class="box"><h2>🧠 Face Recognition</h2><p>Recognizes registered student face using webcam.</p></div>
+    <div class="box"><h2>📊 Attendance Dashboard</h2><p>Updates present, late and total attendance records.</p></div>
+  </div>
+</section>
+
+<footer>
+  Smart Attendance Monitoring System | Face Registration Project
+</footer>
+
+<script>
+let video = document.getElementById("video");
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext("2d");
+
+let registeredStudents = [];
+let records = [];
+let currentRecognizedStudent = null;
+let modelsLoaded = false;
+
+const MODEL_URL = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights";
+
+window.addEventListener("load", async function(){
+  await loadModels();
+  loadLocalData();
+});
+
+async function loadModels(){
+  try{
+    document.getElementById("statusBox").innerText = "Loading AI models. Please wait...";
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+
+    modelsLoaded = true;
+    document.getElementById("statusBox").innerText = "✅ AI models loaded. Start camera.";
+    document.getElementById("statusBox").className = "status good";
+  }catch(error){
+    document.getElementById("statusBox").innerText = "❌ Model loading failed. Check internet and run with Live Server.";
+    document.getElementById("statusBox").className = "status bad";
+  }
+}
+
+function scrollToRegister(){
+  document.getElementById("register").scrollIntoView({behavior:"smooth"});
+}
+
+async function startCamera(){
+  try{
+    let stream = await navigator.mediaDevices.getUserMedia({video:true});
+    video.srcObject = stream;
+    document.getElementById("statusBox").innerText = "✅ Camera started. Now register or recognize face.";
+    document.getElementById("statusBox").className = "status good";
+  }catch(error){
+    document.getElementById("statusBox").innerText = "❌ Camera permission denied or camera not available.";
+    document.getElementById("statusBox").className = "status bad";
+  }
+}
+
+async function getFaceDescriptor(){
+  if(!modelsLoaded){
+    alert("AI models are still loading. Wait a few seconds.");
+    return null;
+  }
+
+  if(!video.srcObject){
+    alert("Start camera first.");
+    return null;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const detection = await faceapi
+    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+    .withFaceLandmarks()
+    .withFaceDescriptor();
+
+  if(!detection){
+    document.getElementById("statusBox").innerText = "❌ No face detected. Look clearly at the camera.";
+    document.getElementById("statusBox").className = "status bad";
+    return null;
+  }
+
+  const resized = faceapi.resizeResults(detection, {
+    width: video.videoWidth,
+    height: video.videoHeight
+  });
+
+  faceapi.draw.drawDetections(canvas, resized);
+  faceapi.draw.drawFaceLandmarks(canvas, resized);
+
+  return detection.descriptor;
+}
+
+async function registerFace(){
+  let name = document.getElementById("name").value.trim();
+  let regno = document.getElementById("regno").value.trim();
+  let department = document.getElementById("department").value;
+
+  if(name === "" || regno === ""){
+    alert("Enter student name and register number before registration.");
+    return;
+  }
+
+  let descriptor = await getFaceDescriptor();
+  if(!descriptor) return;
+
+  let existingIndex = registeredStudents.findIndex(s => s.regno === regno);
+
+  let student = {
+    name: name,
+    regno: regno,
+    department: department,
+    descriptor: Array.from(descriptor)
+  };
+
+  if(existingIndex >= 0){
+    registeredStudents[existingIndex] = student;
+  }else{
+    registeredStudents.push(student);
+  }
+
+  saveLocalData();
+  updateDashboard();
+
+  document.getElementById("cardName").innerText = name;
+  document.getElementById("cardReg").innerText = "Register No: " + regno;
+  document.getElementById("cardDept").innerText = "Department: " + department;
+  document.getElementById("cardStatus").innerText = "Face Registered";
+
+  document.getElementById("statusBox").innerText = "✅ Face registered successfully for " + name;
+  document.getElementById("statusBox").className = "status good";
+}
+
+async function recognizeFace(){
+  if(registeredStudents.length === 0){
+    alert("No registered faces found. Register a face first.");
+    return;
+  }
+
+  let descriptor = await getFaceDescriptor();
+  if(!descriptor) return;
+
+  let bestStudent = null;
+  let bestDistance = 999;
+
+  registeredStudents.forEach(student => {
+    let savedDescriptor = new Float32Array(student.descriptor);
+    let distance = faceapi.euclideanDistance(descriptor, savedDescriptor);
+
+    if(distance < bestDistance){
+      bestDistance = distance;
+      bestStudent = student;
+    }
+  });
+
+  if(bestDistance < 0.55){
+    currentRecognizedStudent = bestStudent;
+
+    document.getElementById("name").value = bestStudent.name;
+    document.getElementById("regno").value = bestStudent.regno;
+    document.getElementById("department").value = bestStudent.department;
+
+    document.getElementById("cardName").innerText = bestStudent.name;
+    document.getElementById("cardReg").innerText = "Register No: " + bestStudent.regno;
+    document.getElementById("cardDept").innerText = "Department: " + bestStudent.department;
+    document.getElementById("cardStatus").innerText = "Face Recognized";
+
+    document.getElementById("statusBox").innerText =
+      "✅ Recognized: " + bestStudent.name + " | Match Score: " + (100 - Math.round(bestDistance * 100)) + "%";
+    document.getElementById("statusBox").className = "status good";
+  }else{
+    currentRecognizedStudent = null;
+    document.getElementById("statusBox").innerText =
+      "❌ Face not matched. Please register this student first.";
+    document.getElementById("statusBox").className = "status bad";
+  }
+}
+
+function markAttendance(){
+  if(!currentRecognizedStudent){
+    alert("Recognize face first before marking attendance.");
+    return;
+  }
+
+  let entryType = document.getElementById("entryType").value;
+  let now = new Date();
+  let time = now.toLocaleTimeString();
+
+  let student = {
+    name: currentRecognizedStudent.name,
+    regno: currentRecognizedStudent.regno,
+    department: currentRecognizedStudent.department,
+    status: entryType,
+    face: "Verified",
+    time: time
+  };
+
+  records.push(student);
+  saveLocalData();
+  updateTable();
+  updateDashboard();
+
+  document.getElementById("cardStatus").innerText = entryType;
+  document.getElementById("statusBox").innerText = "✅ Attendance marked for " + student.name;
+  document.getElementById("statusBox").className = "status good";
+
+  currentRecognizedStudent = null;
+}
+
+function updateTable(){
+  let table = document.getElementById("recordTable");
+  table.innerHTML = "";
+
+  if(records.length === 0){
+    table.innerHTML = `<tr><td colspan="6">No attendance marked yet</td></tr>`;
+    return;
+  }
+
+  records.forEach(student => {
+    let statusClass = student.status === "Present" ? "present" : "late";
+    let row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${student.name}</td>
+      <td>${student.regno}</td>
+      <td>${student.department}</td>
+      <td class="${statusClass}">${student.status}</td>
+      <td class="present">${student.face}</td>
+      <td>${student.time}</td>
+    `;
+
+    table.appendChild(row);
+  });
+}
+
+function updateDashboard(){
+  let total = records.length;
+  let present = records.filter(s => s.status === "Present").length;
+  let late = records.filter(s => s.status === "Late Entry").length;
+
+  document.getElementById("registeredCount").innerText = registeredStudents.length;
+  document.getElementById("total").innerText = total;
+  document.getElementById("present").innerText = present;
+  document.getElementById("late").innerText = late;
+}
+
+function saveLocalData(){
+  localStorage.setItem("registeredStudents", JSON.stringify(registeredStudents));
+  localStorage.setItem("attendanceRecords", JSON.stringify(records));
+}
+
+function loadLocalData(){
+  let savedStudents = localStorage.getItem("registeredStudents");
+  let savedRecords = localStorage.getItem("attendanceRecords");
+
+  if(savedStudents){
+    registeredStudents = JSON.parse(savedStudents);
+  }
+
+  if(savedRecords){
+    records = JSON.parse(savedRecords);
+  }
+
+  updateTable();
+  updateDashboard();
+}
+
+function clearAll(){
+  let ok = confirm("Clear all registered faces and attendance records?");
+  if(!ok) return;
+
+  registeredStudents = [];
+  records = [];
+  currentRecognizedStudent = null;
+
+  localStorage.removeItem("registeredStudents");
+  localStorage.removeItem("attendanceRecords");
+
+  updateTable();
+  updateDashboard();
+
+  document.getElementById("cardName").innerText = "Student ID";
+  document.getElementById("cardReg").innerText = "Register No: --";
+  document.getElementById("cardDept").innerText = "Department: EIE";
+  document.getElementById("cardStatus").innerText = "Ready";
+
+  document.getElementById("statusBox").innerText = "All data cleared.";
+  document.getElementById("statusBox").className = "status warn";
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+</script>
+
+</body>
+</html>
